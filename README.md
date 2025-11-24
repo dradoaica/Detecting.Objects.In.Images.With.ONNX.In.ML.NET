@@ -1,4 +1,6 @@
-# ObjectDetection
+# Object Detection with ONNX in ML.NET
+
+## Overview
 
 | ML.NET version | API type    | Status     | App Type    | Data type   | Scenario         | ML Task       | Algorithms            |
 |----------------|-------------|------------|-------------|-------------|------------------|---------------|-----------------------|
@@ -8,17 +10,39 @@ For a detailed explanation of how to build this application, see the
 accompanying [tutorial](https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/object-detection-onnx) on the
 Microsoft Docs site.
 
+## Prerequisites
+
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later.
+- Visual Studio 2026 or VS Code.
+
 ## Problem
 
 Object detection is one of the classical problems in computer vision: Recognize what the objects are inside a given
 image and also where they are in the image. For these cases, you can either use pre-trained models or train your own
 model to classify images specific to your custom domain.
 
+## Project Structure
+
+The project is organized as follows:
+
+* **ObjectDetection**: The main console application project.
+    * **DataStructures**: Contains data classes used for ML.NET data loading and settings.
+        * `ImageNetData.cs`: Defines the schema for loading image data.
+        * `ImageNetSettings.cs`: Defines image dimensions expected by the model.
+        * `TinyYoloModelSettings.cs`: Defines input/output tensor names for the ONNX model.
+    * **YoloParser**: Contains classes for parsing the YOLO model output.
+        * `YoloOutputParser.cs`: Logic to parse the model output tensor into bounding boxes.
+        * `YoloBoundingBox.cs`: Represents a detected object's bounding box.
+        * `DimensionsBase.cs`: Base class for dimensions.
+    * `OnnxModelScorer.cs`: Handles loading the ONNX model and scoring images.
+    * `Program.cs`: The entry point of the application.
+* **assets**: Contains the model file and sample images.
+
 ## DataSet
 
 The dataset contains images which are located in the [assets](./ObjectDetectionConsoleApp/assets/images) folder. These
 images are taken from [wikimedia commons site](https://commons.wikimedia.org/wiki/Main_Page). Go
-to [Wikimediacommon.md](./ObjectDetectionConsoleApp/assets/images/wikimedia.md) to refer to the image urls and their
+to [Wikimediacommon.md](./ObjectDetectionConsoleApp/assets/images/wikimedia.md) to refer to the image URLs and their
 licenses.
 
 ## Pre-trained model
@@ -28,11 +52,11 @@ pretrained model, **Tiny Yolo2** in  **ONNX** format. This model is a real-time 
 detects 20 different classes. It is made up of 9 convolutional layers and 6 max-pooling layers and is a smaller version
 of the more complex full [YOLOv2](https://pjreddie.com/darknet/yolov2/) network.
 
-The Open Neural Network Exchange i.e [ONNX](http://onnx.ai/) is an open format to represent deep learning models. With
+The Open Neural Network Exchange i.e. [ONNX](http://onnx.ai/) is an open format to represent deep learning models. With
 ONNX, developers can move models between state-of-the-art tools and choose the combination that is best for them. ONNX
 is developed and supported by a community of partners.
 
-The model is downloaded from the [ONNX Model Zoo](https://github.com/onnx/models) which is a is a collection of
+The model is downloaded from the [ONNX Model Zoo](https://github.com/onnx/models) which is a collection of
 pre-trained, state-of-the-art models in the ONNX format.
 
 The Tiny YOLO2 model was trained on the [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/) dataset. Below are the
@@ -61,18 +85,21 @@ corresponding confidence scores, refer to this [post](http://machinethink.net/bl
 
 ## Solution
 
-The console application project `ObjectDetection` can be used to to identify objects in the sample images based on the *
+The console application project `ObjectDetection` can be used to identify objects in the sample images based on the *
 *Tiny Yolo2 ONNX** model.
 
 Again, note that this sample only uses/consumes a pre-trained ONNX model with ML.NET API. Therefore, it does **not**
 train any ML.NET model. Currently, ML.NET supports only for scoring/detecting with existing ONNX trained models.
 
-You need to follow next steps in order to execute the classification test:
+## How to Run
 
-1) **Set VS default startup project:** Set `ObjectDetection` as starting project in Visual Studio.
-2) **Run the training model console app:** Hit F5 in Visual Studio. At the end of the execution, the output will be
-   similar to this screenshot:
-   ![image](./docs/Output/Console_output.png)
+1. Clone the repository.
+2. Navigate to the `ObjectDetection` directory.
+3. Run the application using the .NET CLI:
+
+   ```bash
+   dotnet run
+   ```
 
 ## Code Walkthrough
 
@@ -105,7 +132,7 @@ public class ImageNetData
 
 ### ML.NET: Configure the model
 
-The first step is to create an empty dataview as we just need schema of data while configuring up model.
+The first step is to create an empty data view as we just need schema of data while configuring up model.
 
 ```csharp
 var data = mlContext.Data.LoadFromTextFile<ImageNetData>(imagesLocation, hasHeader: true);
@@ -123,7 +150,7 @@ values are normalized across all R,G,B channels).
 
 ```csharp
 var pipeline = mlContext.Transforms.LoadImages(outputColumnName: "image", imageFolder: "", inputColumnName: nameof(ImageNetData.ImagePath))
-                .Append(mlContext.Transforms.ResizeImages(outputColumnName: "image", imageWidth: ImageNetSettings.imageWidth, imageHeight: ImageNetSettings.imageHeight, inputColumnName: "image"))
+                .Append(mlContext.Transforms.ResizeImages(outputColumnName: "image", imageWidth: ImageNetSettings.ImageWidth, imageHeight: ImageNetSettings.ImageHeight, inputColumnName: "image"))
                 .Append(mlContext.Transforms.ExtractPixels(outputColumnName: "image"))
                 .Append(mlContext.Transforms.ApplyOnnxModel(modelFile: modelLocation, outputColumnNames: new[] { TinyYoloModelSettings.ModelOutput }, inputColumnNames: new[] { TinyYoloModelSettings.ModelInput }));
 ```
@@ -163,8 +190,8 @@ Finally, we return the trained model after *fitting* the estimator pipeline.
 When obtaining the prediction, we get an array of floats in the property `PredictedLabels`. The array is a float array
 of size **21125**. This is the output of model i,e 125x13x13 as discussed earlier. This output is interpreted by
 `YoloOutputParser` class and returns a number of bounding boxes for each image. Again these boxes are filtered so that
-we retrieve only 5 bounding boxes which have better confidence(how much certain that a box contains the obejct) for each
-object of the image. On console we display the label value of each bounding box.
+we retrieve only 5 bounding boxes which have better confidence(how much certain that a box contains the object) for each
+object of the image. On console, we display the label value of each bounding box.
 
 # Detect objects in the image:
 
@@ -172,7 +199,7 @@ After the model is configured, we need to pass the image to the model to detect 
 we get an array of floats in the property `PredictedLabels`. The array is a float array of size **21125**. This is the
 output of model i,e 125x13x13 as discussed earlier. This output is interpreted by `YoloOutputParser` class and returns a
 number of bounding boxes for each image. Again these boxes are filtered so that we retrieve only 5 bounding boxes which
-have better confidence(how much certain that a box contains the obejct) for each object of the image.
+have better confidence(how much certain that a box contains the object) for each object of the image.
 
 ```csharp
 IEnumerable<float[]> probabilities = modelScorer.Score(imageDataView);
@@ -186,4 +213,4 @@ var boundingBoxes =
 ```
 
 **Note** The Tiny Yolo2 model is not having much accuracy compare to full YOLO2 model. As this is a sample program we
-are using Tiny version of Yolo model i.e Tiny_Yolo2
+are using Tiny version of Yolo model i.e. Tiny_Yolo2

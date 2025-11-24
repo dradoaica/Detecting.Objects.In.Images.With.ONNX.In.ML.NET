@@ -13,36 +13,38 @@ internal class YoloOutputParser
     public const float CELL_WIDTH = 32;
     public const float CELL_HEIGHT = 32;
 
-    private static readonly Color[] classColors = new[]
-    {
+    private static readonly Color[] ClassColors =
+    [
         Color.Khaki, Color.Fuchsia, Color.Silver, Color.RoyalBlue, Color.Green, Color.DarkOrange, Color.Purple,
         Color.Gold, Color.Red, Color.Aquamarine, Color.Lime, Color.AliceBlue, Color.Sienna, Color.Orchid, Color.Tan,
         Color.LightPink, Color.Yellow, Color.HotPink, Color.OliveDrab, Color.SandyBrown, Color.DarkTurquoise,
-    };
+    ];
 
-    private readonly float[] anchors = new[]
-    {
+    private readonly float[] anchors =
+    [
         1.08F, 1.19F, 3.42F, 4.41F, 6.63F, 11.38F, 9.42F, 5.11F, 16.62F, 10.52F,
-    };
+    ];
 
     private readonly int channelStride = ROW_COUNT * COL_COUNT;
 
-    private readonly string[] labels = new[]
-    {
+    private readonly string[] labels =
+    [
         "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog",
         "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor",
-    };
+    ];
 
-    private float Sigmoid(float value)
+    /// <summary>Applies the Sigmoid function to output values to map them between 0 and 1.</summary>
+    private static float Sigmoid(float value)
     {
         var k = (float)Math.Exp(value);
         return k / (1.0f + k);
     }
 
-    private float[] Softmax(float[] values)
+    /// <summary>Applies the Softmax function to output values to represent probabilities.</summary>
+    private static float[] Softmax(float[] values)
     {
         var maxVal = values.Max();
-        var exp = values.Select(v => Math.Exp(v - maxVal));
+        var exp = values.Select(v => Math.Exp(v - maxVal)).ToList();
         var sumExp = exp.Sum();
 
         return exp.Select(v => (float)(v / sumExp)).ToArray();
@@ -74,7 +76,7 @@ internal class YoloOutputParser
         Height = (float)Math.Exp(boxDimensions.Height) * CELL_HEIGHT * anchors[(box * 2) + 1],
     };
 
-    public float[] ExtractClasses(float[] modelOutput, int x, int y, int channel)
+    private float[] ExtractClasses(float[] modelOutput, int x, int y, int channel)
     {
         var predictedClasses = new float[CLASS_COUNT];
         var predictedClassOffset = channel + BOX_INFO_FEATURE_COUNT;
@@ -86,12 +88,13 @@ internal class YoloOutputParser
         return Softmax(predictedClasses);
     }
 
-    private ValueTuple<int, float> GetTopResult(float[] predictedClasses) => predictedClasses
+    private static ValueTuple<int, float> GetTopResult(float[] predictedClasses) => predictedClasses
         .Select((predictedClass, index) => (Index: index, Value: predictedClass))
         .OrderByDescending(result => result.Value)
         .First();
 
-    private float IntersectionOverUnion(RectangleF boundingBoxA, RectangleF boundingBoxB)
+    /// <summary>Calculates the Intersection over Union (IoU) of two bounding boxes.</summary>
+    private static float IntersectionOverUnion(RectangleF boundingBoxA, RectangleF boundingBoxB)
     {
         var areaA = boundingBoxA.Width * boundingBoxA.Height;
 
@@ -162,7 +165,7 @@ internal class YoloOutputParser
                             },
                             Confidence = topScore,
                             Label = labels[topResultIndex],
-                            BoxColor = classColors[topResultIndex],
+                            BoxColor = ClassColors[topResultIndex],
                         }
                     );
                 }
@@ -172,7 +175,7 @@ internal class YoloOutputParser
         return boxes;
     }
 
-    public IList<YoloBoundingBox> FilterBoundingBoxes(IList<YoloBoundingBox> boxes, int limit, float threshold)
+    public static IList<YoloBoundingBox> FilterBoundingBoxes(IList<YoloBoundingBox> boxes, int limit, float threshold)
     {
         var activeCount = boxes.Count;
         var isActiveBoxes = new bool[boxes.Count];
@@ -234,7 +237,5 @@ internal class YoloOutputParser
         return results;
     }
 
-    private class CellDimensions : DimensionsBase
-    {
-    }
+    private class CellDimensions : DimensionsBase;
 }

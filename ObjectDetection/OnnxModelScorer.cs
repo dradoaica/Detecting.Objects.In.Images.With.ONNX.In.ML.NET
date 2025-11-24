@@ -1,18 +1,21 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.Data;
+using ObjectDetection.Common;
 using ObjectDetection.DataStructures;
-using ObjectDetection.YoloParser;
 
 namespace ObjectDetection;
 
+/// <summary>Scorer class for the ONNX model.</summary>
 internal class OnnxModelScorer
 {
     private readonly string imagesFolder;
     private readonly MLContext mlContext;
     private readonly string modelLocation;
 
-    private IList<YoloBoundingBox> _boundingBoxes = new List<YoloBoundingBox>();
-
+    /// <summary>Initializes a new instance of the <see cref="OnnxModelScorer" /> class.</summary>
+    /// <param name="imagesFolder">The path to the images folder.</param>
+    /// <param name="modelLocation">The path to the ONNX model file.</param>
+    /// <param name="mlContext">The MLContext instance.</param>
     public OnnxModelScorer(string imagesFolder, string modelLocation, MLContext mlContext)
     {
         this.imagesFolder = imagesFolder;
@@ -20,31 +23,39 @@ internal class OnnxModelScorer
         this.mlContext = mlContext;
     }
 
-    private ITransformer LoadModel(string modelLocation)
+    /// <summary>Scores the data using the ONNX model.</summary>
+    /// <param name="data">The input data view.</param>
+    /// <returns>An enumerable of float arrays representing the probabilities.</returns>
+    public IEnumerable<float[]> Score(IDataView data)
     {
-        Console.WriteLine("Read model");
-        Console.WriteLine($"Model location: {modelLocation}");
-        Console.WriteLine(
-            $"Default parameters: image size=({ImageNetSettings.imageWidth},{ImageNetSettings.imageHeight})"
-        );
+        var model = LoadModel(modelLocation);
 
+        return PredictDataUsingModel(data, model);
+    }
+
+    private ITransformer LoadModel(string location)
+    {
+        ConsoleHelper.ConsoleWriteHeader("Read model");
+        Console.WriteLine($"Model location: {location}");
+        Console.WriteLine(
+            $"Default parameters: image size=({ImageNetSettings.ImageWidth},{ImageNetSettings.ImageHeight})"
+        );
         // Create IDataView from empty list to obtain input data schema
         var data = mlContext.Data.LoadFromEnumerable(new List<ImageNetData>());
-
         // Define scoring pipeline
         var pipeline = mlContext.Transforms.LoadImages("image", "", nameof(ImageNetData.ImagePath))
             .Append(
                 mlContext.Transforms.ResizeImages(
                     "image",
-                    ImageNetSettings.imageWidth,
-                    ImageNetSettings.imageHeight,
+                    ImageNetSettings.ImageWidth,
+                    ImageNetSettings.ImageHeight,
                     "image"
                 )
             )
             .Append(mlContext.Transforms.ExtractPixels("image"))
             .Append(
                 mlContext.Transforms.ApplyOnnxModel(
-                    modelFile: modelLocation,
+                    modelFile: location,
                     outputColumnNames: new[]
                     {
                         TinyYoloModelSettings.ModelOutput,
@@ -55,7 +66,6 @@ internal class OnnxModelScorer
                     }
                 )
             );
-
         // Fit scoring pipeline
         var model = pipeline.Fit(data);
 
@@ -66,39 +76,11 @@ internal class OnnxModelScorer
     {
         Console.WriteLine($"Images location: {imagesFolder}");
         Console.WriteLine("");
-        Console.WriteLine("=====Identify the objects in the images=====");
+        ConsoleHelper.ConsoleWriteHeader("=====Identify the objects in the images=====");
         Console.WriteLine("");
-
         var scoredData = model.Transform(testData);
-
         var probabilities = scoredData.GetColumn<float[]>(TinyYoloModelSettings.ModelOutput);
 
         return probabilities;
-    }
-
-    public IEnumerable<float[]> Score(IDataView data)
-    {
-        var model = LoadModel(modelLocation);
-
-        return PredictDataUsingModel(data, model);
-    }
-
-    public struct ImageNetSettings
-    {
-        public const int imageHeight = 416;
-        public const int imageWidth = 416;
-    }
-
-    public struct TinyYoloModelSettings
-    {
-        // for checking Tiny yolo2 Model input and  output  parameter names,
-        //you can use tools like Netron, 
-        // which is installed by Visual Studio AI Tools
-
-        // input tensor name
-        public const string ModelInput = "image";
-
-        // output tensor name
-        public const string ModelOutput = "grid";
     }
 }
