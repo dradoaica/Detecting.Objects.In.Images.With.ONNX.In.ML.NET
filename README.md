@@ -25,18 +25,19 @@ model to classify images specific to your custom domain.
 
 The project is organized as follows:
 
-* **ObjectDetection**: The main console application project.
-    * **DataStructures**: Contains data classes used for ML.NET data loading and settings.
-        * `ImageNetData.cs`: Defines the schema for loading image data.
-        * `ImageNetSettings.cs`: Defines image dimensions expected by the model.
-        * `TinyYoloModelSettings.cs`: Defines input/output tensor names for the ONNX model.
-    * **YoloParser**: Contains classes for parsing the YOLO model output.
-        * `YoloOutputParser.cs`: Logic to parse the model output tensor into bounding boxes.
-        * `YoloBoundingBox.cs`: Represents a detected object's bounding box.
-        * `DimensionsBase.cs`: Base class for dimensions.
-    * `OnnxModelScorer.cs`: Handles loading the ONNX model and scoring images.
-    * `Program.cs`: The entry point of the application.
-* **assets**: Contains the model file and sample images.
+- **ObjectDetection**: The main console application project.
+    - **assets**: Contains the model file and sample images.
+    - **Common**: Helper methods for formatting console output.
+    - **DataStructures**: Contains data classes used for ML.NET data loading and settings.
+        - `ImageNetData.cs`: Defines the schema for loading image data.
+        - `ImageNetSettings.cs`: Defines image dimensions expected by the model.
+        - `TinyYoloModelSettings.cs`: Defines input/output tensor names for the ONNX model.
+    - **YoloParser**: Contains classes for parsing the YOLO model output.
+        - `YoloOutputParser.cs`: Logic to parse the model output tensor into bounding boxes.
+        - `YoloBoundingBox.cs`: Represents a detected object's bounding box.
+        - `DimensionsBase.cs`: Base class for dimensions.
+    - `OnnxModelScorer.cs`: Handles loading the ONNX model and scoring images.
+    - `Program.cs`: The entry point of the application.
 
 ## DataSet
 
@@ -48,7 +49,7 @@ licenses.
 ## Pre-trained model
 
 There are multiple models which are pre-trained for identifying multiple objects in the images. here we are using the
-pretrained model, **Tiny Yolo2** in  **ONNX** format. This model is a real-time neural network for object detection that
+pretrained model, **Tiny Yolo2*- in  **ONNX*- format. This model is a real-time neural network for object detection that
 detects 20 different classes. It is made up of 9 convolutional layers and 6 max-pooling layers and is a smaller version
 of the more complex full [YOLOv2](https://pjreddie.com/darknet/yolov2/) network.
 
@@ -86,22 +87,18 @@ corresponding confidence scores, refer to this [post](http://machinethink.net/bl
 ## Solution
 
 The console application project `ObjectDetection` can be used to identify objects in the sample images based on the *
-*Tiny Yolo2 ONNX** model.
+*Tiny Yolo2 ONNX*- model.
 
 Again, note that this sample only uses/consumes a pre-trained ONNX model with ML.NET API. Therefore, it does **not**
 train any ML.NET model. Currently, ML.NET supports only for scoring/detecting with existing ONNX trained models.
 
 ## How to Run
 
-1. Clone the repository.
-2. Navigate to the `ObjectDetection` directory.
-3. Run the application using the .NET CLI:
+1. **Open the Solution**: Open `ObjectDetection.slnx` or the project folder in your IDE.
+2. **Restore Dependencies**: Run `dotnet restore` to install the required NuGet packages.
+3. **Run the Application**: Run the application using your IDE or `dotnet run`.
 
-   ```bash
-   dotnet run
-   ```
-
-## Code Walkthrough
+## How it Works
 
 There is a single project in the solution named `ObjectDetection`, which is responsible for loading the model in Tiny
 Yolo2 ONNX format and then detects objects in the images.
@@ -161,7 +158,7 @@ with [Visual Studio Tools for AI](https://visualstudio.microsoft.com/downloads/a
 These names are used later in the definition of the estimation pipe: in the case of the inception network, the input
 tensor is named 'image' and the output is named 'grid'
 
-Define the **input** and **output** parameters of the Tiny Yolo2 Onnx Model.
+Define the **input*- and **output*- parameters of the Tiny Yolo2 Onnx Model.
 
 ```csharp
 public struct TinyYoloModelSettings
@@ -180,7 +177,7 @@ public struct TinyYoloModelSettings
 
 ![inspecting neural network with netron](./docs/Netron/netron.PNG)
 
-Finally, we return the trained model after *fitting* the estimator pipeline.
+Finally, we return the trained model after *fitting*- the estimator pipeline.
 
 ```csharp
   var model = pipeline.Fit(data);
@@ -212,5 +209,5 @@ var boundingBoxes =
     .Select(boxes => parser.FilterBoundingBoxes(boxes, 5, .5F));
 ```
 
-**Note** The Tiny Yolo2 model is not having much accuracy compare to full YOLO2 model. As this is a sample program we
+**Note*- The Tiny Yolo2 model is not having much accuracy compare to full YOLO2 model. As this is a sample program we
 are using Tiny version of Yolo model i.e. Tiny_Yolo2
