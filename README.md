@@ -2,6 +2,12 @@
 
 ## Overview
 
+The application `ObjectDetection` can be used to identify objects in the sample images based on the **Tiny Yolo2 ONNX*-
+model.
+
+Again, note that this sample only uses/consumes a pre-trained ONNX model with ML.NET API. Therefore, it does **not**
+train any ML.NET model. Currently, ML.NET supports only for scoring/detecting with existing ONNX trained models.
+
 | ML.NET version | API type    | Status     | App Type    | Data type   | Scenario         | ML Task       | Algorithms            |
 |----------------|-------------|------------|-------------|-------------|------------------|---------------|-----------------------|
 | v5.0.0         | Dynamic API | Up-to-date | Console app | image files | Object Detection | Deep Learning | Tiny Yolo2 ONNX model |
@@ -37,16 +43,16 @@ The project is organized as follows:
         - `YoloBoundingBox.cs`: Represents a detected object's bounding box.
         - `DimensionsBase.cs`: Base class for dimensions.
     - `OnnxModelScorer.cs`: Handles loading the ONNX model and scoring images.
-    - `Program.cs`: The entry point of the application.
+    - `Program.cs`: The main entry point.
 
-## DataSet
+### DataSet
 
 The dataset contains images which are located in the [assets](./ObjectDetectionConsoleApp/assets/images) folder. These
 images are taken from [wikimedia commons site](https://commons.wikimedia.org/wiki/Main_Page). Go
 to [Wikimediacommon.md](./ObjectDetectionConsoleApp/assets/images/wikimedia.md) to refer to the image URLs and their
 licenses.
 
-## Pre-trained model
+### Pre-trained model
 
 There are multiple models which are pre-trained for identifying multiple objects in the images. here we are using the
 pretrained model, **Tiny Yolo2*- in  **ONNX*- format. This model is a real-time neural network for object detection that
@@ -83,14 +89,6 @@ The output is a (125x13x13) tensor where 13x13 is the number of grid cells that 
 cell corresponds to 125 channels, made up of the 5 bounding boxes predicted by the grid cell and the 25 data elements
 that describe each bounding box (5x25=125). For more information on how to derive the final bounding boxes and their
 corresponding confidence scores, refer to this [post](http://machinethink.net/blog/object-detection-with-yolo/).
-
-## Solution
-
-The console application project `ObjectDetection` can be used to identify objects in the sample images based on the *
-*Tiny Yolo2 ONNX*- model.
-
-Again, note that this sample only uses/consumes a pre-trained ONNX model with ML.NET API. Therefore, it does **not**
-train any ML.NET model. Currently, ML.NET supports only for scoring/detecting with existing ONNX trained models.
 
 ## How to Run
 
